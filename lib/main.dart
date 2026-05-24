@@ -1,50 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'liveupdate/live_update_notifier.dart'; // سنحتفظ به للتوافق لكن سنعدل
 
-import 'l10n/app_locale_controller.dart';
-import 'screens/redesign/home_redesign_screen.dart';
-import 'theme/livebridge_tokens.dart';
-
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setPreferredOrientations(const <DeviceOrientation>[
-    DeviceOrientation.portraitUp,
-  ]);
-  final Brightness platformBrightness =
-      WidgetsBinding.instance.platformDispatcher.platformBrightness;
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  SystemChrome.setSystemUIOverlayStyle(
-    LbAppTheme.overlayStyle(platformBrightness),
-  );
-  await loadAppLocalePreference();
-  runApp(const LiveBridgeApp());
+void main() {
+  runApp(OwnBarApp());
 }
 
-class LiveBridgeApp extends StatelessWidget {
-  const LiveBridgeApp({super.key});
+class OwnBarApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: HomePage(),
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  static const platform = MethodChannel('com.example.own_bar/service');
+
+  @override
+  void initState() {
+    super.initState();
+    requestPermissions();
+  }
+
+  Future<void> requestPermissions() async {
+    // طلب صلاحية النافذة العائمة
+    bool overlayGranted = await platform.invokeMethod('startOverlayService');
+    // طلب صلاحية قراءة الإشعارات إن لم تكن مفعلة
+    bool listenerEnabled = await platform.invokeMethod('isNotificationListenerEnabled');
+    if (!listenerEnabled) {
+      await platform.invokeMethod('openNotificationSettings');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<Locale?>(
-      valueListenable: appLocaleOverrideNotifier,
-      builder: (BuildContext context, Locale? locale, _) {
-        return MaterialApp(
-          title: 'LiveBridge',
-          debugShowCheckedModeBanner: false,
-          locale: locale,
-          supportedLocales: supportedAppLocales(),
-          localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          theme: LbAppTheme.light(),
-          darkTheme: LbAppTheme.dark(),
-          themeMode: ThemeMode.system,
-          home: const HomeRedesignScreen(),
-        );
-      },
+    return Scaffold(
+      appBar: AppBar(title: Text('Own Bar')),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () async {
+            await platform.invokeMethod('startOverlayService');
+          },
+          child: Text('تشغيل الجزيرة الديناميكية'),
+        ),
+      ),
     );
   }
 }
