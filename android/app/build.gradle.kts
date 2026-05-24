@@ -80,6 +80,11 @@ gradle.taskGraph.whenReady {
 
 dependencies {
     implementation("androidx.core:core-ktx:1.17.0")
+    configurations.all {
+    exclude(group = "io.flutter", module = "flutter_embedding_debug")
+    exclude(group = "io.flutter", module = "flutter_embedding_release")
+    exclude(group = "io.flutter", module = "flutter_embedding_profile")
+}
     implementation("io.github.d4viddf:hyperisland_kit:0.4.3")
 }
 
